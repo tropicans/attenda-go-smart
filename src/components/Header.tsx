@@ -1,82 +1,89 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Menu, X, QrCode, BarChart3, Users, Settings } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from "./ui/button";
+import { QrCode, LayoutDashboard, Users, FileText, LogOut, LogIn } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext'; // 1. Import useAuth
+import { supabase } from '@/lib/supabaseClient';
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { session } = useAuth(); // 2. Dapatkan sesi dari context
+  const navigate = useNavigate();
 
-  const navigationItems = [
-    { icon: QrCode, label: 'QR Scanner', href: '#scanner' },
-    { icon: BarChart3, label: 'Dashboard', href: '#dashboard' },
-    { icon: Users, label: 'Presensi', href: '#attendance' },
-    { icon: Settings, label: 'Laporan', href: '#reports' },
-  ];
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/'); // Arahkan ke halaman utama setelah logout
+  };
 
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <img src={logo} alt="attenda" className="w-10 h-10" />
-            <div>
-              <h1 className="text-xl font-bold text-foreground">attenda</h1>
-              <p className="text-xs text-muted-foreground">Presensi Modern</p>
-            </div>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            {navigationItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors duration-200"
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="font-medium">{item.label}</span>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Grup Kiri: Logo & Navigasi Utama */}
+          <div className="flex items-center gap-10">
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <img src="/src/assets/logo.png" alt="attenda logo" className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-foreground">attenda</h1>
+                <p className="text-xs text-muted-foreground">Presensi Modern</p>
+              </div>
+            </Link>
+            <nav className="hidden md:flex items-center space-x-6">
+              <a href="/#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                Fitur
               </a>
-            ))}
-          </nav>
-
-          {/* CTA Button */}
-          <div className="hidden md:block">
-            <Button className="btn-hero">
-              Mulai Presensi
-            </Button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-border pt-4 animate-fade-in">
-            <nav className="flex flex-col space-y-3">
-              {navigationItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted transition-colors duration-200"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </a>
-              ))}
-              <Button className="btn-hero mt-4">
-                Mulai Presensi
-              </Button>
+              <a href="/#dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                Dashboard
+              </a>
             </nav>
           </div>
-        )}
+
+          {/* Grup Kanan: Tombol Aksi (Dinamis) */}
+          <div className="flex items-center space-x-2">
+            {/* 3. Gunakan conditional rendering */}
+            {session ? (
+              <> {/* Tampilkan ini jika sudah login */}
+                <Button variant="ghost" asChild>
+                  <Link to="/admin/events">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Event
+                  </Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link to="/admin/employees">
+                    <Users className="mr-2 h-4 w-4" />
+                    Pegawai
+                  </Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link to="/admin/reports">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Laporan
+                  </Link>
+                </Button>
+                <Button variant="destructive" size="sm" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <> {/* Tampilkan ini jika belum login */}
+                <Button variant="ghost" asChild>
+                  <Link to="/scanner">
+                    <QrCode className="mr-2 h-4 w-4" />
+                    QR Scanner
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Admin Login
+                  </Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </header>
   );

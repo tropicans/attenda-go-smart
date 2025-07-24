@@ -1,0 +1,21 @@
+# Mengabaikan dependensi yang diinstall secara lokal
+node_modules
+
+# Mengabaikan folder hasil build (jika ada secara lokal)
+dist
+
+# Mengabaikan file log
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Mengabaikan file spesifik environment
+.env
+.env.local
+
+# Mengabaikan folder git
+.git
+
+# Mengabaikan file spesifik sistem operasi
+.DS_Store

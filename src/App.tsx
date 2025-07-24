@@ -1,27 +1,37 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { Routes, Route } from 'react-router-dom';
+import MainLayout from '@/components/MainLayout'; // 1. Import layout utama
+import ProtectedRoute from '@/components/ProtectedRoute';
 
-const queryClient = new QueryClient();
+// Import semua halaman
+import IndexPage from './pages/Index';
+import AttendPage from './pages/Attend';
+import ScannerPage from './pages/Scanner';
+import LoginPage from './pages/Login';
+import EventsPage from './pages/admin/Events';
+import EmployeesPage from './pages/admin/Employees';
+import ReportsPage from './pages/admin/Reports';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <Routes>
+      {/* Rute-rute yang berdiri sendiri (tanpa header utama) */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/attend/:eventId" element={<AttendPage />} />
 
-export default App;
+      {/* Rute-rute yang menggunakan MainLayout (memiliki header) */}
+      <Route element={<MainLayout />}> {/* 2. Bungkus rute-rute ini dengan MainLayout */}
+        <Route path="/" element={<IndexPage />} />
+        <Route path="/scanner" element={<ScannerPage />} />
+
+        {/* Rute admin di dalam MainLayout dan juga dilindungi */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/admin/events" element={<EventsPage />} />
+          <Route path="/admin/employees" element={<EmployeesPage />} />
+          <Route path="/admin/reports" element={<ReportsPage />} />
+        </Route>
+      </Route>
+    </Routes>
+  )
+}
+
+export default App

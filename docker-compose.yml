@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  # Nama service kita, bisa apa saja
+  attenda-app:
+    # Memberitahu Docker Compose untuk membangun image dari Dockerfile di direktori saat ini
+    build: .
+    # Memberi nama pada image yang akan dibuat agar mudah diidentifikasi
+    image: attenda-app:latest
+    # Menetapkan nama untuk container yang berjalan
+    container_name: attenda-app-container
+    # Memetakan port: port 8014 di komputer Anda akan meneruskan traffic ke port 80 di dalam container
+    ports:
+      - "8014:80"
