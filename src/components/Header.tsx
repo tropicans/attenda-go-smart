@@ -68,12 +68,7 @@ const Header = () => {
               </>
             ) : (
               <> {/* Tampilkan ini jika belum login */}
-                <Button variant="ghost" asChild>
-                  <Link to="/scanner">
-                    <QrCode className="mr-2 h-4 w-4" />
-                    QR Scanner
-                  </Link>
-                </Button>
+
                 <Button asChild>
                   <Link to="/login">
                     <LogIn className="mr-2 h-4 w-4" />

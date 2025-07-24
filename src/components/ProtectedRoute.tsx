@@ -1,22 +1,19 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
+  const location = useLocation(); // 1. Dapatkan lokasi saat ini
 
-  // Jika masih dalam proses loading, jangan render apa-apa
-  // Ini untuk mencegah "kedipan" ke halaman login saat aplikasi pertama kali dimuat
   if (loading) {
-    return null; // Atau tampilkan spinner loading halaman penuh
+    return null; // Atau tampilkan spinner
   }
 
-  // Jika tidak ada sesi (belum login), alihkan ke halaman login
   if (!session) {
-    return <Navigate to="/login" />;
+    // 2. Saat mengalihkan, kirim lokasi asal ke halaman login
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Jika sudah login, tampilkan halaman yang diminta
-  // <Outlet /> adalah placeholder untuk halaman anak (misal: EventsPage, EmployeesPage)
   return <Outlet />;
 };
 

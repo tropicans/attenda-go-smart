@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabaseClient';
-import QRCode from "react-qr-code"; // Menggunakan library yang benar
+import QRCode from "react-qr-code";
 import { Loader2, Download } from 'lucide-react';
 
 // Tipe untuk data event
@@ -77,9 +77,10 @@ const GenerateQrModal = ({ isOpen, onClose }: GenerateQrModalProps) => {
             canvas.width = svgSize.width;
             canvas.height = svgSize.height;
             const ctx = canvas.getContext("2d");
+            if (!ctx) return;
             const img = new Image();
             img.onload = () => {
-                ctx?.drawImage(img, 0, 0);
+                ctx.drawImage(img, 0, 0);
                 const pngFile = canvas.toDataURL("image/png");
                 const downloadLink = document.createElement("a");
                 downloadLink.download = `qrcode-${selectedEvent.name.replace(/\s+/g, '-').toLowerCase()}.png`;
@@ -91,7 +92,6 @@ const GenerateQrModal = ({ isOpen, onClose }: GenerateQrModalProps) => {
     }
   };
   
-  // Fungsi untuk menangani perubahan event di dropdown
   const handleEventChange = (eventId: string) => {
       const event = events.find(e => e.id.toString() === eventId);
       setSelectedEvent(event || null);

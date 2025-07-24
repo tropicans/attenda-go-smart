@@ -19,4 +19,13 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Tambahkan konfigurasi ini untuk mengatasi masalah build
+  optimizeDeps: {
+    include: ['@yudiel/react-qr-scanner'],
+  },
+  build: {
+    commonjsOptions: {
+      include: /node_modules/,
+    },
+  },
 }));

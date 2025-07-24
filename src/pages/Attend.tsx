@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Toaster, toast } from 'sonner';
 
 // Tipe untuk data event
 interface Event {
@@ -19,12 +20,10 @@ type PageStatus = 'loading' | 'form' | 'submitting' | 'success' | 'error' | 'not
 
 const AttendPage = () => {
   const { eventId } = useParams<{ eventId: string }>();
-  const navigate = useNavigate();
   const [event, setEvent] = useState<Event | null>(null);
   const [nip, setNip] = useState('');
   const [status, setStatus] = useState<PageStatus>('loading');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [employeeName, setEmployeeName] = useState('');
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -57,56 +56,50 @@ const AttendPage = () => {
 
     setStatus('submitting');
 
-    // 1. Cari employee berdasarkan NIP
-    const { data: employee, error: employeeError } = await supabase
-      .from('employees')
-      .select('id, name')
-      .eq('nip', nip.trim())
-      .single();
+    try {
+      const { data: employee, error: employeeError } = await supabase
+        .from('employees')
+        .select('id, name')
+        .eq('nip', nip.trim())
+        .single();
 
-    if (employeeError || !employee) {
-      setErrorMessage('NIP tidak ditemukan. Pastikan NIP Anda benar.');
-      setStatus('error');
-      return;
-    }
+      if (employeeError || !employee) {
+        throw new Error('NIP tidak ditemukan. Pastikan NIP Anda benar.');
+      }
 
-    // 2. Cek apakah pegawai sudah pernah absen di event ini
-    const { data: existingAttendee, error: existingError } = await supabase
-      .from('attendees')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('employee_id', employee.id)
-      .single();
+      const { data: existingAttendee, error: checkError } = await supabase
+        .from('attendees')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('employee_id', employee.id)
+        .single();
 
-    if (existingAttendee) {
+      if (checkError && checkError.code !== 'PGRST116') throw checkError;
+      
+      if (existingAttendee) {
+        setEmployeeName(employee.name);
         setStatus('already_attended');
-        setSuccessMessage(`Anda sudah tercatat hadir, ${employee.name}.`);
         return;
-    }
-    
-    if (existingError && existingError.code !== 'PGRST116') { // Abaikan error 'not found'
-        setErrorMessage('Terjadi kesalahan saat memeriksa data. Coba lagi.');
-        setStatus('error');
-        return;
-    }
+      }
 
-    // 3. Jika belum, masukkan data presensi baru
-    const { error: insertError } = await supabase
-      .from('attendees')
-      .insert({
-        event_id: parseInt(eventId, 10),
-        employee_id: employee.id,
-      });
+      const { error: insertError } = await supabase
+        .from('attendees')
+        .insert({
+          event_id: parseInt(eventId, 10),
+          employee_id: employee.id,
+        });
 
-    if (insertError) {
-      setErrorMessage('Gagal menyimpan presensi. Coba beberapa saat lagi.');
-      setStatus('error');
-    } else {
-      setSuccessMessage(`Terima kasih, ${employee.name}! Kehadiran Anda berhasil dicatat.`);
+      if (insertError) throw insertError;
+
+      setEmployeeName(employee.name);
       setStatus('success');
+
+    } catch (error: any) {
+        toast.error(error.message);
+        setStatus('error');
     }
   };
-
+  
   const renderContent = () => {
     switch (status) {
       case 'loading':
@@ -138,12 +131,6 @@ const AttendPage = () => {
                   required
                 />
               </div>
-              {status === 'error' && (
-                <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-md">
-                  <XCircle className="h-5 w-5" />
-                  <p className="text-sm">{errorMessage}</p>
-                </div>
-              )}
               <Button type="submit" className="w-full" disabled={status === 'submitting'}>
                 {status === 'submitting' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Konfirmasi Kehadiran
@@ -152,17 +139,23 @@ const AttendPage = () => {
           </CardContent>
         );
       case 'success':
-      case 'already_attended':
         return (
           <CardContent className="text-center">
             <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
-            <p className="text-lg">{successMessage}</p>
+            <p className="text-lg">Terima kasih, {employeeName}! Kehadiran Anda berhasil dicatat.</p>
           </CardContent>
         );
+      case 'already_attended':
+        return (
+            <CardContent className="text-center">
+              <AlertTriangle className="mx-auto h-16 w-16 text-yellow-500 mb-4" />
+              <p className="text-lg">Anda sudah tercatat hadir, {employeeName}.</p>
+            </CardContent>
+          );
       case 'not_found':
         return (
           <CardContent className="text-center">
-            <AlertTriangle className="mx-auto h-16 w-16 text-yellow-500 mb-4" />
+            <XCircle className="mx-auto h-16 w-16 text-red-500 mb-4" />
             <p className="text-lg">Event tidak ditemukan.</p>
             <p className="text-sm text-muted-foreground">Pastikan QR code yang Anda pindai valid.</p>
           </CardContent>
@@ -171,22 +164,25 @@ const AttendPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <img src="/src/assets/logo.png" alt="Attenda Logo" className="w-24 mx-auto mb-4" />
-          {event ? (
-            <>
-              <CardTitle>{event.name}</CardTitle>
-              <CardDescription>{new Date(event.event_date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
-            </>
-          ) : (
-            <Skeleton className="h-8 w-3/4 mx-auto" />
-          )}
-        </CardHeader>
-        {renderContent()}
-      </Card>
-    </div>
+    <>
+      <Toaster position="top-center" richColors />
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <img src="/src/assets/logo.png" alt="Attenda Logo" className="w-24 mx-auto mb-4" />
+            {event ? (
+              <>
+                <CardTitle>{event.name}</CardTitle>
+                <CardDescription>{new Date(event.event_date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</CardDescription>
+              </>
+            ) : (
+              <Skeleton className="h-8 w-3/4 mx-auto" />
+            )}
+          </CardHeader>
+          {renderContent()}
+        </Card>
+      </div>
+    </>
   );
 };
 

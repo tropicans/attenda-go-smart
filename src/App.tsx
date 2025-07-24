@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import MainLayout from '@/components/MainLayout'; // 1. Import layout utama
+import MainLayout from '@/components/MainLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 // Import semua halaman
@@ -10,21 +10,24 @@ import LoginPage from './pages/Login';
 import EventsPage from './pages/admin/Events';
 import EmployeesPage from './pages/admin/Employees';
 import ReportsPage from './pages/admin/Reports';
+import AttendanceOptionsPage from './pages/AttendanceOptions'; // Halaman baru
 
 function App() {
   return (
     <Routes>
-      {/* Rute-rute yang berdiri sendiri (tanpa header utama) */}
+      {/* Rute-rute publik yang berdiri sendiri */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/attend/:eventId" element={<AttendPage />} />
+      <Route path="/attendance-options" element={<AttendanceOptionsPage />} />
+      <Route path="/attend-manual" element={<AttendPage />} />
 
-      {/* Rute-rute yang menggunakan MainLayout (memiliki header) */}
-      <Route element={<MainLayout />}> {/* 2. Bungkus rute-rute ini dengan MainLayout */}
+      {/* Rute-rute yang menggunakan MainLayout */}
+      <Route element={<MainLayout />}>
         <Route path="/" element={<IndexPage />} />
-        <Route path="/scanner" element={<ScannerPage />} />
-
-        {/* Rute admin di dalam MainLayout dan juga dilindungi */}
+        
+        {/* Rute yang dilindungi untuk admin */}
         <Route element={<ProtectedRoute />}>
+          <Route path="/scanner" element={<ScannerPage />} />
           <Route path="/admin/events" element={<EventsPage />} />
           <Route path="/admin/employees" element={<EmployeesPage />} />
           <Route path="/admin/reports" element={<ReportsPage />} />
@@ -34,4 +37,4 @@ function App() {
   )
 }
 
-export default App
+export default App;

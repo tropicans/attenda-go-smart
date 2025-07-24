@@ -1,23 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 const LoginPage = () => {
   const { session } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Jika pengguna sudah login, alihkan ke halaman admin
+  // 1. Tentukan halaman tujuan setelah login
+  const from = location.state?.from?.pathname || "/admin/events";
+
+  // 2. Jika sudah login, langsung arahkan
   if (session) {
-    return <Navigate to="/admin/events" />;
+    return <Navigate to={from} replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,10 +37,11 @@ const LoginPage = () => {
 
     if (error) {
       setError('Email atau password salah. Silakan coba lagi.');
-      console.error('Error logging in:', error);
+      setLoading(false);
+    } else {
+      // 3. Arahkan ke halaman asal setelah berhasil login
+      navigate(from, { replace: true });
     }
-    // Pengalihan otomatis akan ditangani oleh AuthProvider
-    setLoading(false);
   };
 
   return (
